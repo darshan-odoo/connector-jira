@@ -78,7 +78,6 @@ class JiraProjectProject(models.Model):
         record._ensure_jira_key()
         return record
 
-
     @api.multi
     def write(self, values):
         if 'project_template' in values:

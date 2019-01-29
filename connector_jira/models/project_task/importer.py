@@ -134,10 +134,10 @@ class ProjectTaskImporter(Component):
         return task_sync_type_binding.is_sync_for_project(project_binding)
 
     def _create_data(self, map_record, **kwargs):
-        return super()._create_data(map_record, jira_epic=self.jira_epic)
+        return super()._create_data(map_record, jira_epic=self.jira_epic, **kwargs)
 
     def _update_data(self, map_record, **kwargs):
-        return super()._update_data(map_record, jira_epic=self.jira_epic)
+        return super()._update_data(map_record, jira_epic=self.jira_epic, **kwargs)
 
     def _import(self, binding, **kwargs):
         # called at the beginning of _import because we must be sure
