@@ -36,6 +36,7 @@
      'views/res_users_views.xml',
      'views/jira_issue_type_views.xml',
      'views/timesheet_account_analytic_line.xml',
+     'views/project_link_jira_views.xml',
      'security/ir.model.access.csv',
      'data/cron.xml',
      ],
