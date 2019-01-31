@@ -47,21 +47,24 @@ class AnalyticLineMapper(Component):
                   'You must create a user or link it manually if the '
                   'login/email differs.') % (jira_author_key, email)
             )
-        return {'user_id': user.id}
+        employee = self.env['hr.employee'].search(
+            [('user_id', '=', user.id)],
+            limit=1
+        )
+        return {'user_id': user.id, 'employee_id': employee.id}
 
     @mapping
     def project_and_task(self, record):
         task_binding = self.options.task_binding
-
         if not task_binding:
+            # when no task exists in Odoo (because we don't synchronize
+            # the issue type for instance), we link the line directly
+            # to the corresponding project, not linked to any task
             issue = self.options.linked_issue
             assert issue
-            project_binder = self.binder_for('jira.project.project')
-            jira_project_id = issue['fields']['project']['id']
-            project = project_binder.to_internal(jira_project_id, unwrap=True)
-            # we can link to any task so we create the worklog
-            # on the project without any task
-            return {'account_id': project.analytic_account_id.id}
+            matcher = self.component(usage='jira.task.project.matcher')
+            project = matcher.find_project_binding(issue, unwrap=True)
+            return {'project_id': project.id}
 
         project = task_binding.project_id
         return {'task_id': task_binding.odoo_id.id,
@@ -117,6 +120,11 @@ class AnalyticLineImporter(Component):
         self.external_issue_id = None
         self.task_binding = None
 
+    @property
+    def _issue_fields_to_read(self):
+        epic_field_name = self.backend_record.epic_link_field_name
+        return ['issuetype', 'project', 'parent', epic_field_name]
+
     def _recurse_import_task(self):
         """ Import and return the task of proper type for the worklog
 
@@ -130,20 +138,21 @@ class AnalyticLineImporter(Component):
         """
         issue_adapter = self.component(usage='backend.adapter',
                                        model_name='jira.project.task')
-        project_binder = self.binder_for('jira.project.project')
         issue_binder = self.binder_for('jira.project.task')
         issue_type_binder = self.binder_for('jira.issue.type')
         jira_issue_id = self.external_record['issueId']
         epic_field_name = self.backend_record.epic_link_field_name
+        project_matcher = self.component(usage='jira.task.project.matcher')
         current_project_id = self.external_issue['fields']['project']['id']
         while jira_issue_id:
             issue = issue_adapter.read(
                 jira_issue_id,
-                fields=['issuetype', 'project', 'parent', epic_field_name],
+                fields=self._issue_fields_to_read,
             )
+
             jira_project_id = issue['fields']['project']['id']
             jira_issue_type_id = issue['fields']['issuetype']['id']
-            project_binding = project_binder.to_internal(jira_project_id)
+            project_binding = project_matcher.find_project_binding(issue)
             issue_type_binding = issue_type_binder.to_internal(
                 jira_issue_type_id
             )
