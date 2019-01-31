@@ -1,60 +1,61 @@
 # Copyright 2016 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
-from odoo.addons.connector.components.mapper import mapping
 from odoo.addons.component.core import Component
 
 
-class ProjectTaskMapper(Component):
-    _inherit = 'jira.project.task.mapper'
+class ProjectTaskProjectMatcher(Component):
+    _name = 'jira.task.project.matcher'
+    _inherit = ['jira.base']
+    _usage = 'jira.task.project.matcher'
 
-    @mapping
-    def project(self, record):
-        if self.options.jira_org:
-            binder = self.binder_for('jira.organization')
-            organization = binder.to_internal(self.options.jira_org['id'])
-            if organization.project_ids:
-                project = organization.project_ids[0].odoo_id
-            return {'project_id': project.id}
-        else:
-            return super().project(record)
+    def find_project_binding(self, jira_task_data, unwrap=False):
+        organizations = self.env['jira.organization'].browse()
+        jira_org_ids = self.component(
+            usage='organization.from.task'
+        ).get_jira_org_ids(jira_task_data)
+        binder = self.binder_for('jira.organization')
+        for jira_org_id in jira_org_ids:
+            organizations |= binder.to_internal(jira_org_id)
+        jira_project_id = jira_task_data['fields']['project']['id']
+        binder = self.binder_for('jira.project.project')
+        return binder.to_internal(
+            jira_project_id,
+            unwrap=unwrap,
+            organizations=organizations,
+        )
+
+
+class OrganizationsFromTask(Component):
+    _name = 'jira.organization.from.task'
+    _inherit = ['jira.base']
+    _usage = 'organization.from.task'
+
+    def get_jira_org_ids(self, jira_task_data):
+        organization_field_name = self.backend_record.organization_field_name
+        if not organization_field_name:
+            return []
+
+        task_fields = jira_task_data.get('fields', {})
+        return [
+            rec['id'] for rec in
+            task_fields.get(organization_field_name) or []
+        ]
 
 
 class ProjectTaskImporter(Component):
     _inherit = 'jira.project.task.importer'
-    _name = 'jira.project.task.importer'
-
-    def __init__(self, work_context):
-        super().__init__(work_context)
-        self.jira_org = None
 
     def _get_external_data(self):
-        """ Return the raw Jira data for ``self.external_id`` """
+        """Return the raw Jira data for ``self.external_id``"""
         result = super()._get_external_data()
-        organization_field_name = self.backend_record.organization_field_name
-        if organization_field_name:
-            org_adapter = self.component(
-                usage='backend.adapter',
-                model_name='jira.organization'
-            )
-            org_key = result['fields'][organization_field_name]
-            if isinstance(org_key, list) and len(org_key) == 1:
-                self.jira_org = org_adapter.read(org_key[0]['id'])
         return result
 
-    def _create_data(self, map_record, **kwargs):
-        return super()._create_data(map_record,
-                                    jira_org=self.jira_org,
-                                    **kwargs)
-
-    def _update_data(self, map_record, **kwargs):
-        return super()._update_data(map_record,
-                                    jira_org=self.jira_org,
-                                    **kwargs)
-
     def _import_dependencies(self):
-        """ Import the dependencies for the record"""
+        """Import the dependencies for the record"""
         super()._import_dependencies()
-        if self.jira_org:
-            self._import_dependency(self.jira_org['id'], 'jira.organization',
-                                    record=self.jira_org)
+        jira_org_ids = self.component(
+            usage='organization.from.task'
+        ).get_jira_org_ids(self.external_record)
+        for jira_org_id in jira_org_ids:
+            self._import_dependency(jira_org_id, 'jira.organization')
