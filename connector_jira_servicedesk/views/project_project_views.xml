@@ -7,7 +7,9 @@
     <field name="inherit_id" ref="connector_jira.view_jira_project_project_form" />
     <field name="arch" type="xml">
       <field name="external_id" position="after">
-        <field name="organization_id" options="{'no_create': True}" />
+        <field name="organization_ids"
+               widget="many2many_tags"
+               options="{'no_create': True}" />
       </field>
     </field>
   </record>
@@ -18,7 +20,7 @@
     <field name="inherit_id" ref="connector_jira.view_jira_project_project_tree" />
     <field name="arch" type="xml">
       <field name="external_id" position="after">
-        <field name="organization_id" />
+        <field name="organization_ids" />
       </field>
     </field>
   </record>
