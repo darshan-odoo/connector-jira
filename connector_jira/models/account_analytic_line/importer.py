@@ -1,5 +1,7 @@
-# Copyright 2016 Camptocamp SA
+# Copyright 2016-2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
+
+import logging
 
 from odoo import _
 from odoo.addons.connector.exception import MappingError
@@ -7,6 +9,8 @@ from odoo.addons.connector.components.mapper import mapping, only_create
 from odoo.addons.component.core import Component
 from ...components.backend_adapter import JIRA_JQL_DATETIME_FORMAT
 from ...components.mapper import iso8601_local_date, whenempty
+
+_logger = logging.getLogger(__name__)
 
 
 class AnalyticLineMapper(Component):
@@ -55,15 +59,10 @@ class AnalyticLineMapper(Component):
 
     @mapping
     def project_and_task(self, record):
+        assert self.options.task_binding or self.options.project_binding
         task_binding = self.options.task_binding
         if not task_binding:
-            # when no task exists in Odoo (because we don't synchronize
-            # the issue type for instance), we link the line directly
-            # to the corresponding project, not linked to any task
-            issue = self.options.linked_issue
-            assert issue
-            matcher = self.component(usage='jira.task.project.matcher')
-            project = matcher.find_project_binding(issue, unwrap=True)
+            project = self.options.project_binding.odoo_id
             return {'project_id': project.id}
 
         project = task_binding.project_id
@@ -119,6 +118,7 @@ class AnalyticLineImporter(Component):
         super().__init__(work_context)
         self.external_issue_id = None
         self.task_binding = None
+        self.project_binding = None
 
     @property
     def _issue_fields_to_read(self):
@@ -183,11 +183,13 @@ class AnalyticLineImporter(Component):
     def _create_data(self, map_record, **kwargs):
         return super()._create_data(map_record,
                                     task_binding=self.task_binding,
+                                    project_binding=self.project_binding,
                                     linked_issue=self.external_issue)
 
     def _update_data(self, map_record, **kwargs):
         return super()._update_data(map_record,
                                     task_binding=self.task_binding,
+                                    project_binding=self.project_binding,
                                     linked_issue=self.external_issue)
 
     def run(self, external_id, force=False, record=None, **kwargs):
@@ -207,9 +209,28 @@ class AnalyticLineImporter(Component):
         return self.backend_adapter.read(self.external_issue_id,
                                          self.external_id)
 
+    def _before_import(self):
+        self.task_binding = self._recurse_import_task()
+        if not self.task_binding:
+            # when no task exists in Odoo (because we don't synchronize
+            # the issue type for instance), we link the line directly
+            # to the corresponding project, not linked to any task
+            issue = self.external_issue
+            assert issue
+            matcher = self.component(usage='jira.task.project.matcher')
+            self.project_binding = matcher.find_project_binding(issue)
+
+    def _import(self, binding, **kwargs):
+        if not self.task_binding and not self.project_binding:
+            _logger.debug(
+                "No task or project synchronized for attaching worklog %s",
+                self.external_record['id']
+                )
+            return
+        return super()._import(binding, **kwargs)
+
     def _import_dependencies(self):
         """ Import the dependencies for the record"""
-        self.task_binding = self._recurse_import_task()
         jira_assignee = self.external_record['author']
         jira_key = jira_assignee.get('key')
         self._import_dependency(jira_key,
