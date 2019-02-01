@@ -9,28 +9,24 @@ import tempfile
 from jira import JIRAError
 from jira.utils import json_loads
 
-from odoo import api, fields, models, exceptions, _
+from odoo import api, fields, models, exceptions, _, tools
 
 from odoo.addons.component.core import Component
 
 _logger = logging.getLogger(__name__)
 
 
-class JiraProjectProject(models.Model):
-    _name = 'jira.project.project'
-    _inherit = 'jira.binding'
-    _inherits = {'project.project': 'odoo_id'}
-    _description = 'Jira Projects'
+class JiraProjectBaseFields(models.AbstractModel):
+    """JIRA Project Base fields
 
-    odoo_id = fields.Many2one(comodel_name='project.project',
-                              string='Project',
-                              required=True,
-                              index=True,
-                              ondelete='restrict')
+    Shared by the binding jira.project.project
+    and the wizard to link/create a JIRA project
+    """
+    _name = 'jira.project.base.fields'
+
     sync_issue_type_ids = fields.Many2many(
         comodel_name='jira.issue.type',
         string='Issue Levels to Synchronize',
-        required=True,
         domain="[('backend_id', '=', backend_id)]",
         help="Only issues of these levels are imported. "
              "When a worklog is imported no a level which is "
@@ -42,15 +38,82 @@ class JiraProjectProject(models.Model):
         selection='_selection_project_template',
         string='Default Project Template',
         default='Scrum software development',
-        required=True,
     )
     project_template_shared = fields.Char(
         string='Default Shared Template',
+    )
+    action = fields.Selection(
+        selection=[
+            ('link', 'Link with JIRA'),
+            ('export', 'Export to JIRA'),
+        ],
+        default='link',
+        required=True,
+        help="Defines if the information of the project (name "
+             "and key) are exported to JIRA when changed. Link means"
+             "the project already exists on JIRA, no sync of the project"
+             " details once the link is established."
+             " Tasks are always imported from JIRA, not pushed.",
     )
 
     @api.model
     def _selection_project_template(self):
         return self.env['jira.backend']._selection_project_template()
+
+
+class JiraProjectProject(models.Model):
+    _name = 'jira.project.project'
+    _inherit = ['jira.binding', 'jira.project.base.fields']
+    _inherits = {'project.project': 'odoo_id'}
+    _description = 'Jira Projects'
+
+    odoo_id = fields.Many2one(comodel_name='project.project',
+                              string='Project',
+                              required=True,
+                              index=True,
+                              ondelete='restrict')
+
+    _sql_constraints = [
+        ('jira_binding_backend_uniq', 'unique(backend_id, odoo_id)',
+         "A binding already exists for this project and this backend."),
+    ]
+
+    # Disable and implement the constraint jira_binding_uniq as python because
+    # we need to override the in connector_jira_service_desk and it would try
+    # to create it again at every update because of the base implementation
+    # in the binding's parent model.
+    @api.model_cr
+    def _add_sql_constraints(self):
+        # we replace the sql constraint by a python one
+        # to include the organizations
+        constraints = []
+        for (key, definition, msg) in self._sql_constraints:
+            if key == 'jira_binding_uniq':
+                conname = '%s_%s' % (self._table, key)
+                has_definition = tools.constraint_definition(
+                    self.env.cr, conname
+                )
+                if has_definition:
+                    tools.drop_constraint(self.env.cr, self._table, conname)
+            else:
+                constraints.append((key, definition, msg))
+        self._sql_constraints = constraints
+        super()._add_sql_constraints()
+
+    @api.constrains('backend_id', 'external_id')
+    @api.multi
+    def _constrains_jira_uniq(self):
+        for binding in self:
+            same_link_bindings = self.search([
+                ('id', '!=', self.id),
+                ('backend_id', '=', self.backend_id.id),
+                ('external_id', '=', self.external_id),
+            ])
+            if same_link_bindings:
+                raise exceptions.ValidationError(_(
+                    "The project %s is already linked with the same"
+                    " JIRA project."
+                ) % (same_link_bindings.display_name))
 
     @api.onchange('backend_id')
     def onchange_project_backend_id(self):
@@ -77,7 +140,6 @@ class JiraProjectProject(models.Model):
         record = super().create(values)
         record._ensure_jira_key()
         return record
-
 
     @api.multi
     def write(self, values):
@@ -162,6 +224,17 @@ class ProjectProject(models.Model):
                 name = '[%s] %s' % (project.jira_key, name)
             names.append((project_id, name))
         return names
+
+    @api.multi
+    def create_and_link_jira(self):
+        action_link = self.env.ref('connector_jira.open_project_link_jira')
+        action = action_link.read()[0]
+        action['context'] = dict(
+            self.env.context,
+            active_id=self.id,
+            active_model=self._name,
+        )
+        return action
 
 
 class ProjectAdapter(Component):
