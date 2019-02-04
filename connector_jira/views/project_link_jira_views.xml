@@ -16,7 +16,7 @@
         <group name="start" attrs="{'invisible': [('state', '!=', 'start')]}">
           <group>
             <field name="backend_id"/>
-            <field name="action" widget="radio"/>
+            <field name="sync_action" widget="radio"/>
           </group>
         </group>
         <group name="issue_types" attrs="{'invisible': [('state', '!=', 'issue_types')]}">
@@ -48,8 +48,8 @@
           </group>
         </group>
         <div name="final" attrs="{'invisible': [('state', '!=', 'final')]}">
-          <p attrs="{'invisible': [('action', '!=', 'export')]}">The project will be created on JIRA in background.</p>
-          <p attrs="{'invisible': [('action', '!=', 'link')]}">The project is now linked with JIRA.</p>
+          <p attrs="{'invisible': [('sync_action', '!=', 'export')]}">The project will be created on JIRA in background.</p>
+          <p attrs="{'invisible': [('sync_action', '!=', 'link')]}">The project is now linked with JIRA.</p>
         </div>
         <footer>
           <div attrs="{'invisible': [('state', '=', 'final')]}">

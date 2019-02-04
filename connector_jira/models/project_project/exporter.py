@@ -12,12 +12,12 @@ class JiraProjectProjectListener(Component):
 
     @skip_if(lambda self, record, **kwargs: self.no_connector_export(record))
     def on_record_create(self, record, fields=None):
-        if record.action == 'export':
+        if record.sync_action == 'export':
             record.with_delay(priority=10).export_record(fields=fields)
 
     @skip_if(lambda self, record, **kwargs: self.no_connector_export(record))
     def on_record_write(self, record, fields=None):
-        if record.action == 'export':
+        if record.sync_action == 'export':
             record.with_delay(priority=10).export_record(fields=fields)
 
 
@@ -41,7 +41,7 @@ class ProjectProjectListener(Component):
             # we never want to export that.
             return
         for binding in record.jira_bind_ids:
-            if binding.action == 'export':
+            if binding.sync_action == 'export':
                 binding.with_delay(priority=10).export_record(fields=fields)
 
 

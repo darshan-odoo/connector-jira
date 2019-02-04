@@ -104,17 +104,17 @@ class ProjectLinkJira(models.TransientModel):
         }
 
     def state_exit_start(self):
-        if self.action == 'export':
+        if self.sync_action == 'export':
             self.add_all_issue_types()
-        elif self.action == 'link':
+        elif self.sync_action == 'link':
             if not self.jira_project_id:
                 self._link_binding()
         self.state = 'issue_types'
 
     def state_exit_issue_types(self):
-        if self.action == 'export':
+        if self.sync_action == 'export':
             self.state = 'export_config'
-        elif self.action == 'link':
+        elif self.sync_action == 'link':
             self._copy_issue_types()
             self.state = 'final'
 
@@ -128,7 +128,7 @@ class ProjectLinkJira(models.TransientModel):
             'backend_id': self.backend_id.id,
             'odoo_id': self.project_id.id,
             'jira_key': self.jira_key,
-            'action': 'export',
+            'sync_action': 'export',
             'sync_issue_type_ids': [(6, 0, self.sync_issue_type_ids.ids)],
             'project_template': self.project_template,
             'project_template_shared': self.project_template_shared,
@@ -172,7 +172,7 @@ class ProjectLinkJira(models.TransientModel):
             'backend_id': self.backend_id.id,
             'odoo_id': self.project_id.id,
             'jira_key': self.jira_key,
-            'action': self.action,
+            'sync_action': self.sync_action,
             'external_id': jira_project.id,
         }
         return values

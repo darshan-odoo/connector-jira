@@ -18,7 +18,7 @@ class ProjectLinkJira(models.TransientModel):
         return states
 
     def state_exit_start(self):
-        if self.action == 'link':
+        if self.sync_action == 'link':
             self.state = 'link_organizations'
         else:
             super().state_exit_start()

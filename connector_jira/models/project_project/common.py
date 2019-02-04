@@ -42,7 +42,7 @@ class JiraProjectBaseFields(models.AbstractModel):
     project_template_shared = fields.Char(
         string='Default Shared Template',
     )
-    action = fields.Selection(
+    sync_action = fields.Selection(
         selection=[
             ('link', 'Link with JIRA'),
             ('export', 'Export to JIRA'),
@@ -101,7 +101,6 @@ class JiraProjectProject(models.Model):
         super()._add_sql_constraints()
 
     @api.constrains('backend_id', 'external_id')
-    @api.multi
     def _constrains_jira_uniq(self):
         for binding in self:
             same_link_bindings = self.search([

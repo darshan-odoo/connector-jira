@@ -36,7 +36,7 @@
             attrs="{'readonly': [('external_id', '!=', False)],
                     'invisible': [('project_template', '!=', 'shared')],
                     'required': [('project_template', '=', 'shared')]}"/>
-          <field name="action"/>
+          <field name="sync_action"/>
           <div colspan="2">
             <p class="oe_grey oe_inline">
               The checkboxes define which types of JIRA issues will be imported
