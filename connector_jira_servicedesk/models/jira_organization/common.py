@@ -15,7 +15,9 @@ class JiraOrganization(models.Model):
     backend_id = fields.Many2one(
         ondelete='cascade'
     )
-    project_ids = fields.One2many('jira.project.project', 'organization_ids')
+    project_ids = fields.Many2many(
+        comodel_name='jira.project.project'
+    )
 
     @job(default_channel='root.connector_jira.import')
     def import_batch(self, backend, from_date=None, to_date=None):

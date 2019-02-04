@@ -134,8 +134,10 @@ class ProjectTaskImporter(Component):
         return result
 
     def _find_project_binding(self):
-        link = self.component(usage='jira.task.project.matcher')
-        self.project_binding = link.find_project_binding(self.external_record)
+        matcher = self.component(usage='jira.task.project.matcher')
+        self.project_binding = matcher.find_project_binding(
+            self.external_record
+        )
 
     def _is_issue_type_sync(self):
         project_binding = self.project_binding

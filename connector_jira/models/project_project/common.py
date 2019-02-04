@@ -22,7 +22,7 @@ class JiraProjectBaseFields(models.AbstractModel):
     Shared by the binding jira.project.project
     and the wizard to link/create a JIRA project
     """
-    _name = 'jira.project.base.fields'
+    _name = 'jira.project.base.mixin'
 
     sync_issue_type_ids = fields.Many2many(
         comodel_name='jira.issue.type',
@@ -63,7 +63,7 @@ class JiraProjectBaseFields(models.AbstractModel):
 
 class JiraProjectProject(models.Model):
     _name = 'jira.project.project'
-    _inherit = ['jira.binding', 'jira.project.base.fields']
+    _inherit = ['jira.binding', 'jira.project.base.mixin']
     _inherits = {'project.project': 'odoo_id'}
     _description = 'Jira Projects'
 

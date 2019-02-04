@@ -5,9 +5,7 @@ from odoo.addons.component.core import Component
 
 
 class ProjectTaskProjectMatcher(Component):
-    _name = 'jira.task.project.matcher'
-    _inherit = ['jira.base']
-    _usage = 'jira.task.project.matcher'
+    _inherit = 'jira.task.project.matcher'
 
     def find_project_binding(self, jira_task_data, unwrap=False):
         organizations = self.env['jira.organization'].browse()

@@ -10,7 +10,7 @@ class JiraProjectBaseFields(models.AbstractModel):
     Shared by the binding jira.project.project
     and the wizard to link/create a JIRA project
     """
-    _inherit = 'jira.project.base.fields'
+    _inherit = 'jira.project.base.mixin'
 
     organization_ids = fields.Many2many(
         comodel_name='jira.organization',

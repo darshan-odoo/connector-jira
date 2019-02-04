@@ -11,4 +11,6 @@ class AnalyticLineImporter(Component):
     def _issue_fields_to_read(self):
         issue_fields = super()._issue_fields_to_read
         organization_field_name = self.backend_record.organization_field_name
+        if not organization_field_name:
+            return issue_fields
         return issue_fields + [organization_field_name]
