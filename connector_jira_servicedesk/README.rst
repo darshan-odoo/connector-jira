@@ -9,8 +9,8 @@ of JIRA. Before, be sure to use the button "Configure Organization Link"
 in the "Advanced Configuration" tab.
 
 
-What's added
-^^^^^^^^^^^^
+Features
+^^^^^^^^
 
 Organizations
 -------------
@@ -31,17 +31,17 @@ Steps on Odoo:
 * When you hit Next, the organization(s) you want to link must be set
 * Repeat with another project for Rhea
 
-If the project binding for the synchronization was already existing, you can still edit it in the settings of the project and change the organizations.
+If the project binding for the synchronization already exists, you can still edit it in the settings of the project and change the organizations.
 
 When a task or worklog is imported, it will search for a project having
 exactly the same set of organizations than the one of the task. If no
 project with the same set is found and you have a project configured
-without organization, the task will be linked with it.
+without organization, the task will be linked to it.
 
-Which means that you can have shared project altogether with dedicated
-ones.
+This means that, on Odoo, you can have shared project altogether with dedicated
+ones, while you only have one project on JIRA.
 
-* "Themis" project linked with Themis - tasks with this org only will be attached
-* "Rhea" project linked with Rhea - tasks with this org only will be attached
-* "Themis & Rhea" project linked with Themis and Rhea - tasks with both orgs only will be attached
-* "Gaia" project, the rest of the tasks will be attached
+* Tasks with org "Themis" will be attached to this project
+* Tasks with org "Rhea" will be attached to this project
+* Tasks with orgs "Themis" and "Rhea" will be attached to another project "Themis and Rhea"
+* The rest of the tasks will be attached to a fourth project (configured without organizations)

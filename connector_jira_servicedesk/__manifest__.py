@@ -9,7 +9,7 @@
     'depends': [
         'connector_jira',
     ],
-    'website': 'https://www.camptocamp.com',
+    'website': 'https://github.com/camptocamp/connector-jira',
     'data': [
         'views/jira_backend_views.xml',
         'views/project_project_views.xml',
