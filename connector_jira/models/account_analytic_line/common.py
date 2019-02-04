@@ -1,4 +1,4 @@
-# Copyright 2016 Camptocamp SA
+# Copyright 2016-2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 from odoo import api, fields, models
@@ -21,6 +21,11 @@ class JiraAccountAnalyticLine(models.Model):
     # The REST API needs issue id + worklog id, so we keep it along
     # in case we'll need it for an eventual export
     jira_issue_id = fields.Char()
+
+    _sql_constraints = [
+        ('jira_binding_backend_uniq', 'unique(backend_id, odoo_id)',
+         "A binding already exists for this line and this backend."),
+    ]
 
     @job(default_channel='root.connector_jira.import')
     @api.model

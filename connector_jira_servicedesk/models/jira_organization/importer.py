@@ -6,14 +6,13 @@ from odoo.addons.connector.components.mapper import mapping
 from odoo.addons.component.core import Component
 
 
-class IssueTypeMapper(Component):
-    _name = 'jira.issue.type.mapper'
+class OrganizationMapper(Component):
+    _name = 'jira.organization.mapper'
     _inherit = ['base.import.mapper']
-    _apply_on = 'jira.issue.type'
+    _apply_on = 'jira.organization'
 
     direct = [
         ('name', 'name'),
-        ('description', 'description'),
     ]
 
     @mapping
@@ -21,15 +20,14 @@ class IssueTypeMapper(Component):
         return {'backend_id': self.backend_record.id}
 
 
-class IssueTypeBatchImporter(Component):
-    """ Import the Jira Issue Types
+class OrganizationBatchImporter(Component):
+    """ Import the Jira Organizations
 
-    For every id in in the list of issue types, a direct import is done.
-    Import from a date
+    For every id in in the list of organizations, a direct import is done.
     """
-    _name = 'jira.issue.type.batch.importer'
+    _name = 'jira.organization.batch.importer'
     _inherit = 'jira.direct.batch.importer'
-    _apply_on = ['jira.issue.type']
+    _apply_on = ['jira.organization']
 
     def run(self):
         """ Run the synchronization """

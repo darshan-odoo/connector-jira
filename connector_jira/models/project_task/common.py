@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Camptocamp SA
+# Copyright 2016-2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 from odoo import api, fields, models, exceptions, _
@@ -38,6 +38,11 @@ class JiraProjectTask(models.Model):
              "Empty if the type of parent is filtered out "
              "of the synchronizations.",
     )
+
+    _sql_constraints = [
+        ('jira_binding_backend_uniq', 'unique(backend_id, odoo_id)',
+         "A binding already exists for this task and this backend."),
+    ]
 
     @api.multi
     def unlink(self):
