@@ -24,7 +24,6 @@ class OrganizationBatchImporter(Component):
     """ Import the Jira Organizations
 
     For every id in in the list of organizations, a direct import is done.
-    Import from a date
     """
     _name = 'jira.organization.batch.importer'
     _inherit = 'jira.direct.batch.importer'

@@ -36,7 +36,8 @@ class JiraBackend(models.Model):
         return True
 
     @api.multi
-    def activate_organization_link(self):
+    def activate_organization(self):
+        """Get organization field name from JIRA web-service"""
         self.ensure_one()
         org_field = 'com.atlassian.servicedesk:sd-customer-organizations'
         with self.work_on('jira.backend') as work:

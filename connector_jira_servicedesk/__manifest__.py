@@ -14,7 +14,6 @@
         'views/jira_backend_views.xml',
         'views/project_project_views.xml',
         'views/project_link_jira_views.xml',
-        'views/jira_issue_type_views.xml',
         'security/ir.model.access.csv',
     ],
     'installable': True,

@@ -38,9 +38,9 @@
       <xpath expr="(//page[@name='advanced_configuration']/group)[last()]" position="after">
         <group col="4">
           <field name="organization_field_name"/>
-          <button name="activate_organization_link"
+          <button name="activate_organization"
                   type="object"
-                  string="Configure Organization Link"
+                  string="Configure Organization"
                   class="oe_inline"
                   attrs="{'invisible': [('state', '=', 'authenticate')]}"/>
           <p class="oe_grey oe_inline">
@@ -49,13 +49,6 @@
             the JIRA custom field that contains the Organization.
           </p>
         </group>
-      </xpath>
-
-      <xpath expr="//field[@name='issue_type_ids']/tree/field[@name='description']" position="after">
-        <field name="is_service_desk" />
-      </xpath>
-      <xpath expr="//field[@name='issue_type_ids']/form//field[@name='description']" position="after">
-        <field name="is_service_desk" />
       </xpath>
     </field>
   </record>
