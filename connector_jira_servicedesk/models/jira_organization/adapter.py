@@ -26,6 +26,9 @@ class OrganizationAdapter(Component):
     _inherit = ['jira.webservice.adapter']
     _apply_on = ['jira.organization']
 
+    # The Service Desk REST API returns an error if this header
+    # is not used. The API may change so they want an agreement for
+    # the client about this.
     _desk_headers = CaseInsensitiveDict({'X-ExperimentalApi': 'opt-in'})
 
     def __init__(self, work_context):
@@ -43,6 +46,10 @@ class OrganizationAdapter(Component):
     def search(self):
         base = (self.client._options['server'] +
                 '/rest/servicedeskapi/organization')
+        # By default, a GET on the REST API returns only one page with the
+        # first 50 rows. Here, client is an instance of the jira library's JIRA
+        # class, which provides a _fetch_pages method to fetch pages.
+        # maxResults=False means it will try to get all pages.
         orgs = self.client._fetch_pages(
             Organization,
             'values',
