@@ -25,9 +25,24 @@ class JiraProjectBaseFields(models.AbstractModel):
 class JiraProjectProject(models.Model):
     _inherit = 'jira.project.project'
 
+    @api.model
+    def _selection_project_type(self):
+        selection = super()._selection_project_type()
+        selection.append(('service_desk', 'Service Desk'))
+        return selection
+
     @api.constrains('backend_id', 'external_id', 'organization_ids')
     @api.multi
     def _constrains_jira_uniq(self):
+        """Modify the base constraint by adding organizations
+
+        Rather than checking unicity of backend+jira id, we validate
+        backend+jira id+organizations ids.
+
+        It allows to have different odoo projects depending of the
+        organization used on Jira.
+
+        """
         for binding in self:
             if not binding.external_id:
                 continue
