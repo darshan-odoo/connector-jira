@@ -3,8 +3,6 @@
 
 import logging
 
-import jira
-
 from odoo import api, fields, models, exceptions, _
 
 _logger = logging.getLogger(__name__)
@@ -23,9 +21,6 @@ class ProjectLinkJira(models.TransientModel):
         default=lambda self: self._default_project_id(),
     )
     jira_key = fields.Char(
-        string='JIRA Key',
-        size=10,  # limit on JIRA
-        required=True,
         default=lambda self: self._default_jira_key(),
     )
     backend_id = fields.Many2one(
@@ -41,15 +36,6 @@ class ProjectLinkJira(models.TransientModel):
     )
 
     @api.model
-    def _selection_state(self):
-        return [
-            ('start', 'Start'),
-            ('issue_types', 'Issue Types'),
-            ('export_config', 'Export Config.'),
-            ('final', 'Final'),
-        ]
-
-    @api.model
     def _default_project_id(self):
         return self.env.context.get('active_id')
 
@@ -59,8 +45,6 @@ class ProjectLinkJira(models.TransientModel):
         if not project_id:
             return
         project = self.env['project.project'].browse(project_id)
-        if project.jira_key:
-            return project.jira_key
         valid = self.env['jira.project.project']._jira_key_valid
         if valid(project.name):
             return project.name
@@ -70,6 +54,15 @@ class ProjectLinkJira(models.TransientModel):
         backends = self.env['jira.backend'].search([])
         if len(backends) == 1:
             return backends.id
+
+    @api.model
+    def _selection_state(self):
+        return [
+            ('start', 'Start'),
+            ('issue_types', 'Issue Types'),
+            ('export_config', 'Export Config.'),
+            ('final', 'Final'),
+        ]
 
     @api.constrains('jira_key')
     def check_jira_key(self):
@@ -106,16 +99,24 @@ class ProjectLinkJira(models.TransientModel):
             self._create_export_binding()
         self.state = 'final'
 
-    def _prepare_export_binding_values(self):
+    def _prepare_base_binding_values(self):
         values = {
             'backend_id': self.backend_id.id,
             'odoo_id': self.project_id.id,
             'jira_key': self.jira_key,
+        }
+        return values
+
+    def _prepare_export_binding_values(self):
+        values = self._prepare_base_binding_values()
+        values.update({
+            'backend_id': self.backend_id.id,
+            'odoo_id': self.project_id.id,
             'sync_action': 'export',
             'sync_issue_type_ids': [(6, 0, self.sync_issue_type_ids.ids)],
             'project_template': self.project_template,
             'project_template_shared': self.project_template_shared,
-        }
+        })
         return values
 
     def _create_export_binding(self):
@@ -125,15 +126,8 @@ class ProjectLinkJira(models.TransientModel):
     def _link_binding(self):
         with self.backend_id.work_on('jira.project.project') as work:
             adapter = work.component(usage='backend.adapter')
-            try:
+            with adapter.handle_user_api_errors():
                 jira_project = adapter.get(self.jira_key)
-            except jira.exceptions.JIRAError:
-                _logger.exception('Error when linking to project %s',
-                                  self.project_id.id)
-                raise exceptions.UserError(
-                    _('Could not link %s, check that this project'
-                      ' keys exists in JIRA.') % (self.jira_key)
-                )
             self._link_with_jira_project(work, jira_project)
 
     def _link_with_jira_project(self, work, jira_project):
@@ -151,13 +145,12 @@ class ProjectLinkJira(models.TransientModel):
         self.sync_issue_type_ids = issue_types.ids
 
     def _prepare_link_binding_values(self, jira_project):
-        values = {
-            'backend_id': self.backend_id.id,
-            'odoo_id': self.project_id.id,
-            'jira_key': self.jira_key,
+        values = self._prepare_base_binding_values()
+        values.update({
             'sync_action': self.sync_action,
             'external_id': jira_project.id,
-        }
+            'project_type': jira_project.projectTypeKey,
+        })
         return values
 
     def _copy_issue_types(self):
