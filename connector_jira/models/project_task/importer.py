@@ -208,8 +208,7 @@ class ProjectTaskImporter(Component):
         jira_parent = self.external_record['fields'].get('parent')
         if jira_parent:
             jira_parent_id = jira_parent['id']
-            self._import_dependency(jira_parent_id, 'jira.project.task',
-                                    record=jira_parent)
+            self._import_dependency(jira_parent_id, 'jira.project.task')
 
         if self.jira_epic:
             self._import_dependency(self.jira_epic['id'], 'jira.project.task',
