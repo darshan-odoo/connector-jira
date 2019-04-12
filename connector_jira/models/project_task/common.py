@@ -162,7 +162,11 @@ class TaskAdapter(Component):
 
     def read(self, id_, fields=None):
         with self.handle_404():
-            return self.client.issue(id_, fields=fields).raw
+            return self.client.issue(
+                id_,
+                fields=fields,
+                expand=['renderedFields']
+            ).raw
 
     def get(self, id_):
         with self.handle_404():
